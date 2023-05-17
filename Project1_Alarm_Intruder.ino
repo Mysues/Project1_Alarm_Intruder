@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-SoftwareSerial bluetoothSerial(11,10);
+SoftwareSerial bluetoothSerial(11, 10);
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -15,8 +15,8 @@ int buzzerPinNumber = 4;
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(pirPinNumber,INPUT);
-  pinMode(ledPinNumber,OUTPUT);
+  pinMode(pirPinNumber, INPUT);
+  pinMode(ledPinNumber, OUTPUT);
   Serial.begin(9600);
   bluetoothSerial.begin(9600);
   lcd.init();
@@ -29,19 +29,19 @@ void loop() {
   // put your main code here, to run repeatedly:
   pirState = digitalRead(pirPinNumber);
   if (pirState == HIGH && isMotion == false) {
-      lcd.backlight();
-      lcd.print("Motion Detected");
-      delay(500);
-      lcd.clear();
-      // Will sent to phone using bluetooth
-      sendBluetoothSetAlarmSignal();
+    lcd.backlight();
+    lcd.print("Motion Detected");
+    delay(500);
+    lcd.clear();
+    // Will sent to phone using bluetooth
+    sendBluetoothSetAlarmSignal();
 
-      lcd.print("Alarm Signal is Sent");
-      delay(1000);
-      lcd.clear();
-      lcd.noBacklight();
+    lcd.print("Alarm Signal is Sent");
+    delay(1000);
+    lcd.clear();
+    lcd.noBacklight();
 
-      isMotion = true;
+    isMotion = true;
   }
 
   if (pirState == LOW && isMotion == true ) {
@@ -61,14 +61,14 @@ void loop() {
   }
 
 
-  digitalWrite(ledPinNumber,isMotion);
-  digitalWrite(buzzerPinNumber,isMotion);
+  digitalWrite(ledPinNumber, isMotion);
+  digitalWrite(buzzerPinNumber, isMotion);
 }
 
-void sendBluetoothSetAlarmSignal(){
+void sendBluetoothSetAlarmSignal() {
   bluetoothSerial.println("Intruder Alert");
 }
 
-void sendBluetoothClearAlarmSignal(){
+void sendBluetoothClearAlarmSignal() {
   bluetoothSerial.println("No Intruder");
 }
