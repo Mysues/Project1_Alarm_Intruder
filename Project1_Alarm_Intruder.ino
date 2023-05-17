@@ -6,7 +6,7 @@ SoftwareSerial bluetoothSerial(11,10);
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-int pirPinNumber = 2;              
+int pirPinNumber = 2;
 int pirState;
 int isMotion = false;
 
@@ -20,7 +20,7 @@ void setup() {
   Serial.begin(9600);
   bluetoothSerial.begin(9600);
   lcd.init();
-  
+
   Serial.println("Silent Alarm ");
   Serial.println("Initializing System");
 }
@@ -28,42 +28,38 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   pirState = digitalRead(pirPinNumber);
-  if(pirState == HIGH){
-    lcd.backlight();
-    lcd.print("Motion Detected");
-    delay(500);
-    lcd.clear();
-    // Will sent to phone using bluetooth
-    sendBluetoothSetAlarmSignal();
+  if (pirState == HIGH && isMotion == false) {
+      lcd.backlight();
+      lcd.print("Motion Detected");
+      delay(500);
+      lcd.clear();
+      // Will sent to phone using bluetooth
+      sendBluetoothSetAlarmSignal();
 
-    lcd.print("Alarm Signal is Sent");
-    delay(1000);
+      lcd.print("Alarm Signal is Sent");
+      delay(1000);
+      lcd.clear();
+      lcd.noBacklight();
+
+      isMotion = true;
+  }
+
+  if (pirState == LOW && isMotion == true ) {
+    lcd.backlight();
+    lcd.print("Clearing Alarm Signal");
+    delay(500);
+    // Will sent to phone using bluetooth
+    sendBluetoothClearAlarmSignal();
+
+    lcd.clear();
+    lcd.print("Alarm Clear");
+    delay(500);
     lcd.clear();
     lcd.noBacklight();
 
-    if (isMotion == false) { 
-      isMotion = true;       
-    }
-  
+    isMotion = false;
   }
-  else{
-    if(isMotion == true){   
-      lcd.backlight();
-      lcd.print("Clearing Alarm Signal");
-      delay(500);
-      // Will sent to phone using bluetooth
-      sendBluetoothClearAlarmSignal();
 
-      lcd.clear();
-      lcd.print("Alarm Clear");
-      delay(500);
-      lcd.clear();
-      lcd.noBacklight();
-      
-      isMotion = false; 
-    }
-  }
-  
 
   digitalWrite(ledPinNumber,isMotion);
   digitalWrite(buzzerPinNumber,isMotion);
