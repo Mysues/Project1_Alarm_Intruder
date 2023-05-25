@@ -9,66 +9,105 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 int pirPinNumber = 2;
 int pirState;
 int isMotion = false;
+long unsigned int prevIsMotion = false;
 
 int ledPinNumber = 3;
-int buzzerPinNumber = 4;
+int buzzerPinNumber = 5;
+
+long unsigned int prevTime;
+long unsigned int interval = 500;
+
+
 
 void setup() {
   // put your setup code here, to run once:
   pinMode(pirPinNumber, INPUT);
   pinMode(ledPinNumber, OUTPUT);
-  Serial.begin(9600);
-  bluetoothSerial.begin(9600);
-  lcd.init();
+  pinMode(buzzerPinNumber, OUTPUT);
 
+  bluetoothSerial.begin(9600);
+
+  lcd.init();
+  lcd.backlight();
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("No Intruder");
+
+  Serial.begin(9600);
   Serial.println("Silent Alarm ");
   Serial.println("Initializing System");
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  readingSensor();
+  processingData();
+}
+
+void readingSensor() {
   pirState = digitalRead(pirPinNumber);
-  if (pirState == HIGH && isMotion == false) {
-    lcd.backlight();
-    lcd.print("Motion Detected");
-    delay(500);
-    lcd.clear();
-    // Will sent to phone using bluetooth
-    sendBluetoothSetAlarmSignal();
 
-    lcd.print("Alarm Signal is Sent");
-    delay(1000);
-    lcd.clear();
-    lcd.noBacklight();
-
+  if (pirState == HIGH && isMotion == false)
     isMotion = true;
-  }
 
-  if (pirState == LOW && isMotion == true ) {
-    lcd.backlight();
-    lcd.print("Clearing Alarm Signal");
-    delay(500);
-    // Will sent to phone using bluetooth
-    sendBluetoothClearAlarmSignal();
-
-    lcd.clear();
-    lcd.print("Alarm Clear");
-    delay(500);
-    lcd.clear();
-    lcd.noBacklight();
-
+  else if (pirState == LOW && isMotion == true )
     isMotion = false;
+}
+
+void processingData() {
+  long unsigned int currentTime = millis();
+  long unsigned int period = currentTime - prevTime;
+  if (period > interval) {
+
+    // Only Change When isMotion change compared to previous state
+    if (isMotion != prevIsMotion) {
+      //Control LED
+      if (isMotion)
+        digitalWrite(ledPinNumber, HIGH);
+      else
+        digitalWrite(ledPinNumber, LOW);
+
+      //Control Piezo
+      if (isMotion)
+        tone(buzzerPinNumber, 900);
+      else
+        noTone(buzzerPinNumber);
+
+      //Control LCD
+      if (isMotion) {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("No Intruder");
+      }
+
+      else {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Intruder Detected!!!");
+      }
+
+      prevIsMotion = isMotion;
+    }
+
+
+    //BlueTooth Signal
+
+    if (isMotion)
+      sendBluetoothSetAlarmSignal();
+    else
+      sendBluetoothClearAlarmSignal();
+    prevTime = currentTime;
   }
 
-
-  digitalWrite(ledPinNumber, isMotion);
-  digitalWrite(buzzerPinNumber, isMotion);
 }
 
 void sendBluetoothSetAlarmSignal() {
-  bluetoothSerial.println("Intruder Alert");
+  bluetoothSerial.println("Motion");
+  Serial.println("Motion");
 }
 
 void sendBluetoothClearAlarmSignal() {
-  bluetoothSerial.println("No Intruder");
+  bluetoothSerial.println("!Motion");
+  Serial.println("!Motion");
 }
